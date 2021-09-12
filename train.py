@@ -22,7 +22,11 @@ from metrics import *
 # pytorch-lightning
 from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning import LightningModule, Trainer
-from pytorch_lightning.logging import TestTubeLogger
+from pytorch_lightning.logging import TestTubeLogger, TensorBoardLogger
+
+
+# from dotenv import load_dotenv
+
 
 class NeRFSystem(LightningModule):
     def __init__(self, hparams):
@@ -83,7 +87,7 @@ class NeRFSystem(LightningModule):
     def configure_optimizers(self):
         self.optimizer = get_optimizer(self.hparams, self.models)
         scheduler = get_scheduler(self.hparams, self.optimizer)
-        
+
         return [self.optimizer], [scheduler]
 
     def train_dataloader(self):
@@ -99,7 +103,7 @@ class NeRFSystem(LightningModule):
                           num_workers=4,
                           batch_size=1, # validate one image (H*W rays) at a time
                           pin_memory=True)
-    
+
     def training_step(self, batch, batch_nb):
         log = {'lr': get_learning_rate(self.optimizer)}
         rays, rgbs = self.decode_batch(batch)
@@ -123,7 +127,7 @@ class NeRFSystem(LightningModule):
         results = self(rays)
         log = {'val_loss': self.loss(results, rgbs)}
         typ = 'fine' if 'rgb_fine' in results else 'coarse'
-    
+
         if batch_nb == 0:
             W, H = self.hparams.img_wh
             img = results[f'rgb_{typ}'].view(H, W, 3).cpu()
@@ -149,13 +153,15 @@ class NeRFSystem(LightningModule):
 
 
 if __name__ == '__main__':
+    # load_dotenv()
+
     hparams = get_opts()
     system = NeRFSystem(hparams)
-    checkpoint_callback = ModelCheckpoint(filepath=os.path.join(f'ckpts/{hparams.exp_name}',
+    checkpoint_callback = ModelCheckpoint(filepath=os.path.join(f'ckpts/{hparams.exp_name}/',
                                                                 '{epoch:d}'),
                                           monitor='val/loss',
                                           mode='min',
-                                          save_top_k=5,)
+                                          save_top_k=hparams.num_epochs)
 
     logger = TestTubeLogger(
         save_dir="logs",
@@ -163,6 +169,14 @@ if __name__ == '__main__':
         debug=False,
         create_git_tag=False
     )
+
+    # tensorboard_logger = TensorBoardLogger("tb_logs", name=hparams.exp_name)
+
+    # wandb_logger = WandbLogger(
+    #     project="nerf",
+    #     entity="bpti",
+    #     name=f"{hparams.exp_name}"
+    # )
 
     trainer = Trainer(max_epochs=hparams.num_epochs,
                       checkpoint_callback=checkpoint_callback,
