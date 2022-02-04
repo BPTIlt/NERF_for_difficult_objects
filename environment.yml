@@ -1,0 +1,16 @@
+name: nerf_pl
+channels:
+  - torch
+  - pytorch
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.6
+  - jupyterlab
+  - ipython
+  - prompt_toolkit
+  - scikit-image
+  - vtk
+  - tensorboard
+  - alembic
+  - black
