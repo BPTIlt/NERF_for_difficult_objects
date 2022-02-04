@@ -140,3 +140,6 @@ data
 meshroom
 wandb
 tmp
+!ckpts/deer_v6_debug_script_picked_blurry/epoch=29.ckpt
+!ckpts/lamp_v3/epoch=44.ckpt
+!ckpts/lamp_v3_debug/epoch=29.ckpt
